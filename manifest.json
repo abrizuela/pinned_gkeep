@@ -1,0 +1,48 @@
+{
+  "applications": {
+    "gecko": {
+      "id": "gkeeppanel@alejandrobrizuela.com.ar"
+    }
+  },
+
+  "manifest_version": 2,
+  "name": "Pinned Google Keep",
+  "version": "2.1.0",
+  "description": "Go to the pinned Google Keep tab. If it doesn't exist, it's created.",
+
+  "icons": {
+    "48": "icons/keep-48.png",
+    "64": "icons/keep-64.png"
+  },
+  
+  "permissions": [
+    "tabs",
+    "https://keep.google.com/*"
+  ],
+
+  "browser_action": {
+    "default_icon": {
+      "32": "icons/keep-32.png"
+    },
+    "default_title": "Pinned Google Keep",
+    "default_area": "navbar"
+  },
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+  
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+K"
+      }
+    }
+  },
+
+  "options_ui": {
+    "page": "options/options.html",
+    "browser_style": true
+  }
+
+}
