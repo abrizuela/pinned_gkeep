@@ -7,7 +7,7 @@
 
   "manifest_version": 2,
   "name": "Pinned Google Keep",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Go to the pinned Google Keep tab. If it doesn't exist, it's created.",
 
   "icons": {
@@ -16,8 +16,7 @@
   },
   
   "permissions": [
-    "tabs",
-    "https://keep.google.com/*"
+    "tabs"
   ],
 
   "browser_action": {
