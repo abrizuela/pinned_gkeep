@@ -1,55 +1,89 @@
-let currentTabId;
-let keepTabId;
-let previousTab;
+const BASE_URL = "keep.google.com";
+let state = {
+    currentTabId: null,
+    currentWinId: null,
+    previousTab: null,
+    previousWin: null
+};
+
+function logTabs(tabs) {
+    console.log("Found tabs:", tabs.map(tab => tab.url));
+}
+
+async function getUserOption() {
+    // If you want to use sync/local storage for user options, update here
+    const { openCurrentWindow } = await browser.storage.sync.get('openCurrentWindow');
+    return typeof openCurrentWindow === 'undefined' ? false : openCurrentWindow;
+}
+
+async function queryKeepTabs() {
+    // Remove currentWindow filter if option is false
+    const currentWindowSetting = await getUserOption();
+    const queryObj = { url: `*://${BASE_URL}/*` };
+    if (currentWindowSetting) {
+        queryObj.currentWindow = true;
+    }
+    const tabs = await browser.tabs.query(queryObj);
+    logTabs(tabs);
+    return tabs;
+}
 
 function onError(e) {
-  console.log("***Error: " + e);
-};
+    console.error("***Error: ", e);
+}
+
+function setButtonIcon(imageURL) {
+    browser.browserAction.setIcon({ path: imageURL }).catch(onError);
+}
 
 function createPinnedTab() {
-  browser.tabs.create(
-    {
-      url: "https://keep.google.com",
-      pinned: true,
-      active: true
-    }
-  )
-};
+    browser.tabs.create({
+        url: `https://${BASE_URL}`,
+        pinned: true,
+        active: true
+    }).catch(onError);
+}
 
-function handleSearch(keepTabs) {
-  //console.log("currentTabId: " + currentTabId);
-  if(keepTabs.length > 0) {
-    //console.log("there is a keep tab");
-    keepTabId = keepTabs[0].id;
-    if(keepTabId === currentTabId) {
-      //console.log("I'm in the keep tab");
-      browser.tabs.update(previousTab, {active: true,});
+async function handleSearch(webpageTabs) {
+    if (webpageTabs.length > 0) {
+        const tab = webpageTabs[0];
+        if (tab.id === state.currentTabId) {
+            // Already in Keep tab, go back to previous
+            if (state.previousWin && state.previousTab) {
+                await browser.windows.update(state.previousWin, { focused: true });
+                await browser.tabs.update(state.previousTab, { active: true });
+            }
+        } else {
+            // Switch to Keep tab
+            state.previousTab = state.currentTabId;
+            state.previousWin = state.currentWinId;
+            await browser.windows.update(tab.windowId, { focused: true });
+            await browser.tabs.update(tab.id, { active: true });
+        }
+        setButtonIcon(tab.favIconUrl);
     } else {
-      //console.log("I'm NOT in the keep tab");
-      previousTab = currentTabId;
-      browser.tabs.update(keepTabId, {active: true,});
+        // No Keep tab, create one
+        state.previousTab = state.currentTabId;
+        createPinnedTab();
     }
-  } else {
-    //console.log("there is NO keep tab");
-    previousTab = currentTabId;
-    createPinnedTab();
-  }
-};
+}
 
-function handleClick(tab) {
-  //console.log("*********Button clicked*********");
-  currentTabId = tab.id;
-  var querying = browser.tabs.query({url: "*://keep.google.com/*"});
-  querying.then(handleSearch, onError);
-};
+async function handleClick(tab) {
+    state.currentTabId = tab.id;
+    state.currentWinId = tab.windowId;
+    try {
+        const webpageTabs = await queryKeepTabs();
+        await handleSearch(webpageTabs);
+    } catch (e) {
+        onError(e);
+    }
+}
 
-function update(details) {
-  if (details.reason === "install" || details.reason === "update") {
-    //browser.tabs.create({url: "https://addons.mozilla.org/firefox/addon/pinned-google-keep/versions/?page=1#version-2.1.0"});
-    var opening = browser.runtime.openOptionsPage();
-    opening.then(onOpened, onError);
-  }
-};
+function handleInstall(details) {
+    if (details.reason === "install" || details.reason === "update") {
+        browser.runtime.openOptionsPage();
+    }
+}
 
 browser.browserAction.onClicked.addListener(handleClick);
-browser.runtime.onInstalled.addListener(update);
+browser.runtime.onInstalled.addListener(handleInstall);
