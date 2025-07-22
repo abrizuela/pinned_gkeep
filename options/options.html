@@ -1,18 +1,29 @@
 <!DOCTYPE html>
 
 <html>
-  <head>
+
+<head>
     <meta charset="utf-8">
-  </head>
+    <link href="options.css" rel="stylesheet" type="text/css">
+    </link>
+</head>
 
 <body>
-  <form>
-      <label>Keyboard shortcut</label>
-      <input type="text" id="shortcut" >
-      <button id="update">Update</button>
-      <button id="reset">Reset</button>
-  </form>
-  <script src="options.js"></script>
+    <form>
+        <label>Keyboard shortcut</label>
+        <input id="shortcut" type="text">
+        <input id="reset" type="button" value="Reset">
+        <br>
+        <label>
+            <input id="openCurrentWindow" type="checkbox">
+            Open tab in current window
+        </label>
+    </form>
+    <div id="errorMessage" class="hidden">Invalid shortcut, please try another one!</div>
+    <div id="updatedMessage" class="hidden">Settings saved!</div>
+
+    <script src="keyboard.js"></script>
+    <script src="options.js"></script>
 </body>
 
 </html>
